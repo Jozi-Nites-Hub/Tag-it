@@ -1,0 +1,25 @@
+tag-it/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── globals.css
+│   └── studio/
+│       └── page.tsx
+├── components/
+│   ├── Navbar.tsx
+│   ├── Hero.tsx
+│   ├── Studio.tsx
+│   ├── UploadZone.tsx
+│   ├── CanvasEditor.tsx
+│   ├── Controls.tsx
+│   ├── Pricing.tsx
+│   └── Footer.tsx
+├── lib/
+│   └── watermark.ts
+├── public/
+│   ├── logo.png          ← your TAG-IT.png
+│   └── joburg.jpg        ← your Joburg.jpg
+├── next.config.js
+├── tailwind.config.ts
+├── tsconfig.json
+└── package.json
