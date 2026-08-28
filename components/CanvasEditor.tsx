@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import { WatermarkSettings } from "./Studio";
-import { renderWatermark, getPosition } from "@/lib/watermark";
+import { getPosition, drawLogo } from "@/lib/watermark";
 
 interface CanvasEditorProps {
   logo: string | null;
@@ -17,7 +17,6 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
   const [customPos, setCustomPos] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Load images
   useEffect(() => {
     if (logo) {
       const img = new Image();
@@ -36,11 +35,9 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
     }
   }, [media]);
 
-  // Render canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !logoImg || !mediaImg) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -49,16 +46,13 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
     canvas.width = mw;
     canvas.height = mh;
 
-    // Draw media
     ctx.clearRect(0, 0, mw, mh);
     ctx.drawImage(mediaImg, 0, 0, mw, mh);
 
-    // Calculate logo size
     const ratio = logoImg.width / logoImg.height;
     const logoW = (mw * settings.size) / 100;
     const logoH = logoW / ratio;
 
-    // Get position
     let lx: number, ly: number;
     if (customPos) {
       lx = customPos.x - logoW / 2;
@@ -67,10 +61,8 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
       [lx, ly] = getPosition(mw, mh, logoW, logoH, settings.position, settings.padding);
     }
 
-    // Draw watermark
     ctx.save();
     ctx.globalAlpha = settings.opacity;
-
     if (settings.shadow) {
       ctx.shadowColor = "rgba(0,0,0,0.5)";
       ctx.shadowBlur = 12;
@@ -91,38 +83,31 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
     } else {
       drawLogo(ctx, logoImg, lx + logoW / 2, ly + logoH / 2, logoW, logoH, settings.rotation);
     }
-
     ctx.restore();
   }, [logoImg, mediaImg, settings, customPos]);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = canvasRef.current.width / rect.width;
-      const scaleY = canvasRef.current.height / rect.height;
-      setCustomPos({
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
-      });
-      setIsDragging(true);
-    },
-    []
-  );
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scaleX = canvasRef.current.width / rect.width;
+    const scaleY = canvasRef.current.height / rect.height;
+    setCustomPos({
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    });
+    setIsDragging(true);
+  }, []);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isDragging || !canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = canvasRef.current.width / rect.width;
-      const scaleY = canvasRef.current.height / rect.height;
-      setCustomPos({
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
-      });
-    },
-    [isDragging]
-  );
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDragging || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scaleX = canvasRef.current.width / rect.width;
+    const scaleY = canvasRef.current.height / rect.height;
+    setCustomPos({
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    });
+  }, [isDragging]);
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
   const handleMouseLeave = useCallback(() => setIsDragging(false), []);
@@ -136,9 +121,7 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
     link.click();
   }, []);
 
-  const handleReset = useCallback(() => {
-    setCustomPos(null);
-  }, []);
+  const handleReset = useCallback(() => setCustomPos(null), []);
 
   const isReady = logoImg && mediaImg;
 
@@ -181,20 +164,4 @@ export default function CanvasEditor({ logo, media, settings }: CanvasEditorProp
       )}
     </div>
   );
-}
-
-function drawLogo(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  rotation: number
-) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate((rotation * Math.PI) / 180);
-  ctx.drawImage(img, -w / 2, -h / 2, w, h);
-  ctx.restore();
 }
