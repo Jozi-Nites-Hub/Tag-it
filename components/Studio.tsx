@@ -92,7 +92,7 @@ export default function Studio() {
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
               🖼️ 2. Your Media
             </h3>
-            <<UploadZone
+            <UploadZone
                accept="image/*"
                label="Drop image here"
                sublabel="JPG, PNG, WebP — multiple allowed"
