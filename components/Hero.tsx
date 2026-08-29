@@ -10,9 +10,16 @@ export default function Hero() {
           Own your brand.
         </span>
       </h1>
+
       <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-400">
-        Watermark images and videos in seconds. No design skills needed. For South Africans, Built by Jozi Nites.
+        Free browser-based watermark studio. Upload your logo + any image, 
+        pick a position, tweak size & opacity, and download — ready to post.
+        <br />
+        <span className="text-tag-yellow font-medium">
+          100% Free · No sign-up · Files stay in your browser
+        </span>
       </p>
+
       <div className="mt-8 flex flex-wrap justify-center gap-4">
         <Link
           href="/studio"
@@ -26,6 +33,28 @@ export default function Hero() {
         >
           View Pricing
         </Link>
+      </div>
+
+      {/* How it works */}
+      <div className="mt-16 grid gap-4 sm:grid-cols-5 text-left sm:text-center">
+        {[
+          { step: "1", title: "Upload Logo", desc: "PNG / SVG / WebP" },
+          { step: "2", title: "Upload Media", desc: "Image or video" },
+          { step: "3", title: "Position", desc: "9-point grid + drag" },
+          { step: "4", title: "Style", desc: "Size · Opacity · Shadow" },
+          { step: "5", title: "Download", desc: "Ready to post" },
+        ].map((item) => (
+          <div
+            key={item.step}
+            className="rounded-xl border border-tag-yellow/20 bg-tag-surface/60 px-4 py-4 backdrop-blur-md"
+          >
+            <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-tag-yellow text-xs font-extrabold text-black">
+              {item.step}
+            </div>
+            <h3 className="text-sm font-bold text-white">{item.title}</h3>
+            <p className="mt-1 text-xs text-gray-400">{item.desc}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
