@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const plans = [
   {
     name: "Starter",
@@ -99,15 +101,16 @@ export default function Pricing() {
               ))}
             </ul>
 
-            <button
-              className={`mt-8 w-full rounded-full py-3 text-sm font-bold transition-all ${
+            <Link
+              href="/studio"
+              className={`mt-8 block w-full rounded-full py-3 text-center text-sm font-bold transition-all ${
                 plan.featured
                   ? "bg-gradient-to-r from-tag-yellow to-tag-yellow-light text-black shadow-lg shadow-tag-yellow/20 hover:shadow-xl"
                   : "border-2 border-tag-yellow text-tag-yellow hover:bg-tag-yellow hover:text-black"
               }`}
             >
               {plan.cta}
-            </button>
+            </Link>
           </div>
         ))}
       </div>
