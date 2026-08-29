@@ -92,12 +92,13 @@ export default function Studio() {
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
               🖼️ 2. Your Media
             </h3>
-            <UploadZone
-              accept="image/*,video/*"
-              label="Drop image or video"
-              sublabel="JPG, PNG, MP4, MOV"
-              onFileSelect={setMedia}
-              preview={media}
+            <<UploadZone
+               accept="image/*"
+               label="Drop image here"
+               sublabel="JPG, PNG, WebP — multiple allowed"
+               onFileSelect={setMedia}
+               preview={media}
+               multiple={true}
             />
           </div>
 
