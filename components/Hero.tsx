@@ -28,10 +28,10 @@ export default function Hero() {
           🚀 Launch Studio
         </Link>
         <Link
-          href="/#pricing"
+          href="/#features"
           className="rounded-full border-2 border-tag-yellow px-8 py-4 text-base font-bold text-tag-yellow transition-all hover:bg-tag-yellow hover:text-black"
         >
-          View Pricing
+         See Features
         </Link>
       </div>
 
