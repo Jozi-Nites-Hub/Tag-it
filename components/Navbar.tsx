@@ -19,22 +19,22 @@ export default function Navbar() {
 
       <div className="flex items-center gap-6">
         <Link
-          href="/studio"
+          href="/#about"
           className="hidden text-sm font-medium text-gray-400 transition-colors hover:text-tag-yellow sm:block"
         >
-          Studio
+          About
         </Link>
         <Link
-          href="/#pricing"
+          href="/#features"
           className="hidden text-sm font-medium text-gray-400 transition-colors hover:text-tag-yellow sm:block"
         >
-          Pricing
+          Features
         </Link>
         <Link
           href="/studio"
           className="rounded-full bg-gradient-to-r from-tag-yellow to-tag-yellow-light px-5 py-2 text-sm font-bold text-black shadow-lg shadow-tag-yellow/20 transition-transform hover:-translate-y-0.5"
         >
-          Start Free
+          Start Here
         </Link>
       </div>
     </nav>

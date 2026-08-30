@@ -18,6 +18,7 @@ export type WatermarkSettings = {
 export default function Studio() {
   const [logo, setLogo] = useState<string | null>(null);
   const [media, setMedia] = useState<string | null>(null);
+
   const [settings, setSettings] = useState<WatermarkSettings>({
     position: "br",
     size: 15,
@@ -75,29 +76,36 @@ export default function Studio() {
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* Sidebar */}
         <div className="space-y-4">
+          {/* Logo Upload */}
           <div className="rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
               🏷️ 1. Your Logo
             </h3>
             <UploadZone
-              accept="image/png,image/svg+xml,image/webp"
+              accept="image/png,image/svg+xml,image/webp,image/jpeg"
               label="Drop logo here"
-              sublabel="PNG, SVG, WebP (transparent best)"
+              sublabel="PNG, SVG, WebP, JPG (transparent best)"
               onFileSelect={setLogo}
               preview={logo}
             />
+            {/* Background removal temporarily disabled */}
+            <p className="mt-3 text-center text-xs text-gray-500">
+              Tip: Use a logo with a transparent background for best results
+            </p>
           </div>
 
+          {/* Media Upload */}
           <div className="rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
               🖼️ 2. Your Media
             </h3>
             <UploadZone
-              accept="image/*,video/*"
-              label="Drop image or video"
-              sublabel="JPG, PNG, MP4, MOV"
+              accept="image/*"
+              label="Drop image here"
+              sublabel="JPG, PNG, WebP"
               onFileSelect={setMedia}
               preview={media}
+              multiple={true}
             />
           </div>
 
@@ -110,11 +118,7 @@ export default function Studio() {
 
         {/* Canvas Area */}
         <div>
-          <CanvasEditor
-            logo={logo}
-            media={media}
-            settings={settings}
-          />
+          <CanvasEditor logo={logo} media={media} settings={settings} />
         </div>
       </div>
     </div>
