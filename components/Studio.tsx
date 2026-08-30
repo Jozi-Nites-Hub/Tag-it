@@ -16,10 +16,11 @@ export type WatermarkSettings = {
 };
 
 export default function Studio() {
-  const [logo, setLogo] = useState<string | null>(null);           // original
-  const [processedLogo, setProcessedLogo] = useState<string | null>(null); // transparent version
+  const [logo, setLogo] = useState<string | null>(null);                 // original
+  const [processedLogo, setProcessedLogo] = useState<string | null>(null); // transparent
   const [removeBg, setRemoveBg] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [media, setMedia] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<WatermarkSettings>({
@@ -39,8 +40,9 @@ export default function Studio() {
     []
   );
 
-  // Process logo when toggle changes or new logo is uploaded
   const processLogo = useCallback(async (source: string, shouldRemove: boolean) => {
+    setError(null);
+
     if (!shouldRemove) {
       setProcessedLogo(source);
       return;
@@ -48,22 +50,14 @@ export default function Studio() {
 
     setIsProcessing(true);
     try {
-      // Dynamic import so it only loads when needed
-      const { removeBackground } = await import("@imgly/background-removal");
-      
-      const blob = await removeBackground(source, {
-        // Optional: you can tweak these
-        // model: "small", // faster, slightly lower quality
-        // output: { format: "image/png", quality: 0.9 }
-      });
-
+      const bgRemoval = await import("@imgly/background-removal");
+      const blob = await bgRemoval.removeBackground(source);
       const url = URL.createObjectURL(blob);
       setProcessedLogo(url);
     } catch (err) {
       console.error("Background removal failed:", err);
-      // Fallback to original
-      setProcessedLogo(source);
-      alert("Could not remove background. Using original logo.");
+      setError("Could not remove background. Try a logo with a simpler background.");
+      setProcessedLogo(source); // fallback
     } finally {
       setIsProcessing(false);
     }
@@ -72,6 +66,8 @@ export default function Studio() {
   const handleLogoSelect = useCallback(
     (url: string) => {
       setLogo(url);
+      setProcessedLogo(null);
+      setError(null);
       processLogo(url, removeBg);
     },
     [removeBg, processLogo]
@@ -87,7 +83,12 @@ export default function Studio() {
     [logo, processLogo]
   );
 
-  const activeStep = (processedLogo || logo) && media ? 3 : (processedLogo || logo) ? 1 : media ? 2 : 0;
+  const handleRetry = useCallback(() => {
+    if (logo) processLogo(logo, true);
+  }, [logo, processLogo]);
+
+  const finalLogo = processedLogo || logo;
+  const activeStep = finalLogo && media ? 3 : finalLogo ? 1 : media ? 2 : 0;
 
   const steps = [
     { id: 1, label: "Upload Logo" },
@@ -96,9 +97,6 @@ export default function Studio() {
     { id: 4, label: "Edit & Preview" },
     { id: 5, label: "Download" },
   ];
-
-  // The logo that actually gets used on the canvas
-  const finalLogo = processedLogo || logo;
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
@@ -130,7 +128,7 @@ export default function Studio() {
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Logo Upload */}
+          {/* Logo Section */}
           <div className="rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
               🏷️ 1. Your Logo
@@ -139,36 +137,88 @@ export default function Studio() {
             <UploadZone
               accept="image/png,image/svg+xml,image/webp,image/jpeg"
               label="Drop logo here"
-              sublabel="PNG, SVG, WebP, JPG (transparent best)"
+              sublabel="PNG, SVG, WebP, JPG"
               onFileSelect={handleLogoSelect}
               preview={finalLogo}
             />
 
-            {/* Remove Background Toggle */}
+            {/* Toggle + Controls */}
             {logo && (
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-white">Remove background</p>
-                  <p className="text-xs text-gray-400">Make logo transparent</p>
+              <div className="mt-4 space-y-3">
+                {/* Toggle */}
+                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Remove background</p>
+                    <p className="text-xs text-gray-400">Make logo transparent</p>
+                  </div>
+
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={removeBg}
+                      onChange={(e) => handleToggleRemoveBg(e.target.checked)}
+                      disabled={isProcessing}
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-white/20 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-tag-yellow peer-checked:after:translate-x-full peer-disabled:opacity-50"></div>
+                  </label>
                 </div>
 
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    className="peer sr-only"
-                    checked={removeBg}
-                    onChange={(e) => handleToggleRemoveBg(e.target.checked)}
-                    disabled={isProcessing}
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-white/20 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-tag-yellow peer-checked:after:translate-x-full peer-disabled:opacity-50"></div>
-                </label>
-              </div>
-            )}
+                {/* Loading */}
+                {isProcessing && (
+                  <div className="rounded-xl border border-tag-yellow/30 bg-tag-yellow/5 px-4 py-3 text-center">
+                    <p className="text-sm font-medium text-tag-yellow animate-pulse">
+                      Removing background…
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      First time may take a few seconds (downloading model)
+                    </p>
+                  </div>
+                )}
 
-            {isProcessing && (
-              <p className="mt-3 text-center text-xs text-tag-yellow animate-pulse">
-                Removing background… (first time may take a few seconds)
-              </p>
+                {/* Error + Retry */}
+                {error && (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+                    <p className="text-sm text-red-400">{error}</p>
+                    <button
+                      onClick={handleRetry}
+                      className="mt-2 text-xs font-bold text-tag-yellow hover:underline"
+                    >
+                      ↺ Try again
+                    </button>
+                  </div>
+                )}
+
+                {/* Side-by-side comparison */}
+                {removeBg && processedLogo && logo && !isProcessing && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-white/10 bg-black/40 p-2 text-center">
+                      <p className="mb-1 text-[10px] uppercase tracking-wider text-gray-400">
+                        Original
+                      </p>
+                      <img
+                        src={logo}
+                        alt="Original"
+                        className="mx-auto h-16 object-contain"
+                      />
+                    </div>
+                    <div className="rounded-lg border border-tag-yellow/40 bg-black/40 p-2 text-center">
+                      <p className="mb-1 text-[10px] uppercase tracking-wider text-tag-yellow">
+                        Transparent
+                      </p>
+                      <img
+                        src={processedLogo}
+                        alt="Transparent"
+                        className="mx-auto h-16 object-contain"
+                        style={{
+                          background:
+                            "repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 12px 12px",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -180,7 +230,7 @@ export default function Studio() {
             <UploadZone
               accept="image/*"
               label="Drop image here"
-              sublabel="JPG, PNG, WebP — multiple allowed"
+              sublabel="JPG, PNG, WebP"
               onFileSelect={setMedia}
               preview={media}
               multiple={true}
@@ -194,15 +244,11 @@ export default function Studio() {
           />
         </div>
 
-        {/* Canvas Area */}
+        {/* Canvas */}
         <div>
-          <CanvasEditor
-            logo={finalLogo}
-            media={media}
-            settings={settings}
-          />
+          <CanvasEditor logo={finalLogo} media={media} settings={settings} />
         </div>
       </div>
     </div>
   );
-      }
+}
