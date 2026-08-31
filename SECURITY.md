@@ -14,7 +14,7 @@ Only the latest release version of **TAGit** receives security updates and vulne
 The Jozi Nites team takes the security of TAGit seriously. If you believe you have found a security vulnerability in TAGit, please report it responsibly:
 
 1. **Do not** open a public issue on GitHub.
-2. Email your report to **security@jozinites.co.za** (or contact the maintainers via Jozi Nites Hub).
+2. Email your report to **security@jozinites.co.za** (or contact the maintainers via Jozi Nites Hub Whatsapp +277842469788 - comment text "TAGit - Secutity").
 3. Include details of the vulnerability:
    - Description of the issue
    - Steps to reproduce
