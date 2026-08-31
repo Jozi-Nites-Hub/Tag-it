@@ -1,3 +1,5 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -20,16 +22,29 @@ const securityHeaders = [
 
 const nextConfig = {
   output: "export",
+  transpilePackages: ["@imgly/background-removal"],
   images: {
     unoptimized: true,
   },
-  // Needed for the WASM model
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "sharp$": false,
-      "onnxruntime-node$": false,
+      "onnxruntime-node": false,
     };
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: "javascript/auto",
+    });
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
     return config;
   },
   // NOTE: with output: "export" Next.js does not serve these headers.
