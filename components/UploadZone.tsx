@@ -1,18 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { isAllowedImageFile } from "@/lib/image-decode";
 
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB max
-
-const ALLOWED_MIME_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/webp",
-  "image/svg+xml",
-  "image/gif",
-  "image/avif",
-]);
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 interface UploadZoneProps {
   accept: string;
@@ -23,6 +14,18 @@ interface UploadZoneProps {
   multiple?: boolean;
   onMultipleSelect?: (urls: string[]) => void;
   fileCount?: number;
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) resolve(e.target.result as string);
+      else reject(new Error("Failed to read file"));
+    };
+    reader.onerror = () => reject(new Error("File reading error"));
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function UploadZone({
@@ -39,63 +42,34 @@ export default function UploadZone({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const processFiles = useCallback(
-    (files: FileList | File[]) => {
+    async (files: FileList | File[]) => {
       setErrorMessage(null);
       const fileArray = Array.from(files);
-
-      const validImageFiles = fileArray.filter((f) => {
-        if (!f.type || !ALLOWED_MIME_TYPES.has(f.type.toLowerCase())) {
-          return false;
-        }
-        return true;
-      });
+      const validImageFiles = fileArray.filter(isAllowedImageFile);
 
       if (validImageFiles.length === 0) {
-        setErrorMessage("Please upload valid image files (PNG, JPG, WebP, SVG).");
+        setErrorMessage(
+          "Please upload PNG, SVG, JPEG, JPG, WebP, GIF, TIF or BMP."
+        );
         return;
       }
 
-      const oversizedFiles = validImageFiles.filter((f) => f.size > MAX_FILE_SIZE_BYTES);
-      if (oversizedFiles.length > 0) {
-        setErrorMessage(`File exceeds max size of 25MB (${oversizedFiles[0].name}).`);
+      const oversized = validImageFiles.find((f) => f.size > MAX_FILE_SIZE_BYTES);
+      if (oversized) {
+        setErrorMessage(`File exceeds max size of 25MB (${oversized.name}).`);
         return;
       }
 
-      if (multiple && onMultipleSelect && validImageFiles.length > 1) {
-        Promise.all(
-          validImageFiles.map(
-            (file) =>
-              new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  if (e.target?.result) {
-                    resolve(e.target.result as string);
-                  } else {
-                    reject(new Error("Failed to read file"));
-                  }
-                };
-                reader.onerror = () => reject(new Error("File reading error"));
-                reader.readAsDataURL(file);
-              })
-          )
-        )
-          .then((urls) => {
-            onMultipleSelect(urls);
-          })
-          .catch(() => {
-            setErrorMessage("An error occurred while reading the files.");
-          });
-      } else {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            onFileSelect(e.target.result as string);
-          }
-        };
-        reader.onerror = () => {
-          setErrorMessage("Failed to read the uploaded image.");
-        };
-        reader.readAsDataURL(validImageFiles[0]);
+      try {
+        if (multiple && onMultipleSelect && validImageFiles.length > 1) {
+          const urls = await Promise.all(validImageFiles.map(readAsDataUrl));
+          onMultipleSelect(urls);
+        } else {
+          const url = await readAsDataUrl(validImageFiles[0]);
+          onFileSelect(url);
+        }
+      } catch {
+        setErrorMessage("An error occurred while reading the files.");
       }
     },
     [multiple, onFileSelect, onMultipleSelect]
@@ -117,9 +91,7 @@ export default function UploadZone({
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      if (e.dataTransfer.files) {
-        processFiles(e.dataTransfer.files);
-      }
+      if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
     },
     [processFiles]
   );
@@ -158,7 +130,7 @@ export default function UploadZone({
             />
             {fileCount > 1 && (
               <p className="mt-2 text-xs font-semibold text-tag-yellow">
-                📁 {fileCount} items loaded (Batch mode)
+                {fileCount} items loaded (batch mode)
               </p>
             )}
           </div>

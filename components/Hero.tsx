@@ -12,7 +12,7 @@ export default function Hero() {
       </h1>
 
       <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-400">
-        Free browser-based watermark studio. Upload your logo + any image, 
+        Free browser-based watermark studio. Upload your logo + any image,
         pick a position, tweak size & opacity, and download — ready to post.
         <br />
         <span className="text-tag-yellow font-medium">
@@ -25,21 +25,20 @@ export default function Hero() {
           href="/studio"
           className="rounded-full bg-gradient-to-r from-tag-yellow to-tag-yellow-light px-8 py-4 text-base font-bold text-black shadow-xl shadow-tag-yellow/20 transition-transform hover:-translate-y-1"
         >
-          🚀 Launch Studio
+          Launch Studio
         </Link>
         <Link
-          href="/#features"
+          href="/coffee"
           className="rounded-full border-2 border-tag-yellow px-8 py-4 text-base font-bold text-tag-yellow transition-all hover:bg-tag-yellow hover:text-black"
         >
-         See Features
+          Buy us a coffee
         </Link>
       </div>
 
-      {/* How it works */}
       <div className="mt-16 grid gap-4 sm:grid-cols-5 text-left sm:text-center">
         {[
-          { step: "1", title: "Upload Logo", desc: "PNG / SVG / WebP" },
-          { step: "2", title: "Upload Media", desc: "Image or video" },
+          { step: "1", title: "Upload Logo", desc: "PNG / SVG / JPEG / GIF / TIF" },
+          { step: "2", title: "Upload Media", desc: "Any supported image" },
           { step: "3", title: "Position", desc: "9-point grid + drag" },
           { step: "4", title: "Style", desc: "Size · Opacity · Shadow" },
           { step: "5", title: "Download", desc: "Ready to post" },

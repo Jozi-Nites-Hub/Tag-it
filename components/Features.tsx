@@ -1,6 +1,8 @@
 export default function Features() {
   const features = [
     "Drag & drop upload zones",
+    "PNG, SVG, JPEG, GIF, TIF, WebP & BMP",
+    "Background removal on any image (in-browser)",
     "Live canvas preview",
     "9 position presets (corners, edges & center)",
     "Size, opacity, rotation & padding controls",

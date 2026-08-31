@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import UploadZone from "./UploadZone";
 import Controls from "./Controls";
 import CanvasEditor from "./CanvasEditor";
 import { WatermarkSettings } from "@/lib/watermark";
+import { IMAGE_ACCEPT, IMAGE_ACCEPT_LABEL } from "@/lib/site";
+import { removeImageBackground } from "@/lib/remove-bg";
 
 export default function Studio() {
   const [logo, setLogo] = useState<string | null>(null);
   const [processedLogo, setProcessedLogo] = useState<string | null>(null);
   const [removeBg, setRemoveBg] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [bgError, setBgError] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
 
   const [mediaList, setMediaList] = useState<string[]>([]);
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
@@ -38,6 +42,11 @@ export default function Studio() {
   );
 
   const processLogo = useCallback(async (source: string, shouldRemove: boolean) => {
+    setBgError(null);
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
     if (!shouldRemove) {
       setProcessedLogo(source);
       return;
@@ -45,14 +54,17 @@ export default function Studio() {
 
     setIsProcessing(true);
     try {
-      const { removeBackground } = await import("@imgly/background-removal");
-      const blob = await removeBackground(source);
-      const url = URL.createObjectURL(blob);
+      const url = await removeImageBackground(source);
+      objectUrlRef.current = url;
       setProcessedLogo(url);
     } catch (err) {
       console.error("Background removal failed:", err);
       setProcessedLogo(source);
-      alert("Could not remove background. Using original logo.");
+      setBgError(
+        err instanceof Error
+          ? err.message
+          : "Could not remove background. Using the original image."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -69,9 +81,7 @@ export default function Studio() {
   const handleToggleRemoveBg = useCallback(
     (checked: boolean) => {
       setRemoveBg(checked);
-      if (logo) {
-        processLogo(logo, checked);
-      }
+      if (logo) processLogo(logo, checked);
     },
     [logo, processLogo]
   );
@@ -88,7 +98,8 @@ export default function Studio() {
 
   const activeMedia = mediaList[activeMediaIndex] || null;
   const finalLogo = processedLogo || logo;
-  const hasWatermarkSource = !!finalLogo || (!!settings.textWatermark && settings.textWatermark.trim() !== "");
+  const hasWatermarkSource =
+    !!finalLogo || (!!settings.textWatermark && settings.textWatermark.trim() !== "");
   const activeStep = hasWatermarkSource && activeMedia ? 3 : hasWatermarkSource ? 1 : activeMedia ? 2 : 0;
 
   const steps = [
@@ -129,13 +140,13 @@ export default function Studio() {
         <div className="space-y-4">
           <div className="rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
-              🏷️ 1. Logo Watermark
+              1. Logo watermark
             </h3>
 
             <UploadZone
-              accept="image/png,image/svg+xml,image/webp,image/jpeg"
+              accept={IMAGE_ACCEPT}
               label="Drop logo here"
-              sublabel="PNG, SVG, WebP, JPG (transparent best)"
+              sublabel={`${IMAGE_ACCEPT_LABEL} · vectors as SVG`}
               onFileSelect={handleLogoSelect}
               preview={finalLogo}
             />
@@ -144,7 +155,7 @@ export default function Studio() {
               <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-white">Remove background</p>
-                  <p className="text-xs text-gray-400">Make logo transparent</p>
+                  <p className="text-xs text-gray-400">Works on any uploaded image · stays in your browser</p>
                 </div>
 
                 <label className="relative inline-flex cursor-pointer items-center">
@@ -162,19 +173,22 @@ export default function Studio() {
 
             {isProcessing && (
               <p className="mt-3 text-center text-xs text-tag-yellow animate-pulse">
-                Removing background… (first time may take a few seconds)
+                Removing background… first run downloads a small on-device model.
               </p>
+            )}
+            {bgError && (
+              <p className="mt-3 text-center text-xs font-semibold text-red-400">{bgError}</p>
             )}
           </div>
 
           <div className="rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
-              🖼️ 2. Media Files (Single or Batch)
+              2. Media files (single or batch)
             </h3>
             <UploadZone
-              accept="image/*"
+              accept={IMAGE_ACCEPT}
               label="Drop images here"
-              sublabel="JPG, PNG, WebP — Select multiple for Batch"
+              sublabel={`${IMAGE_ACCEPT_LABEL} · select multiple for batch`}
               onFileSelect={handleSingleMediaSelect}
               onMultipleSelect={handleMultipleMediaSelect}
               preview={activeMedia}
