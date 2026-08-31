@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: `${SITE_NAME} | Free Browser Watermark Studio`,
     description: SITE_TAGLINE,
-    images: ["/logo.png"},
+    images: ["/logo.png"],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: SITE_URL },
