@@ -1,10 +1,16 @@
+import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Studio from "@/components/Studio";
+
+export const metadata: Metadata = {
+  title: "Studio",
+  description:
+    "Watermark logos and media in your browser. PNG, SVG, JPEG, GIF, TIF. Optional background removal. Files never leave your device.",
+};
 
 export default function StudioPage() {
   return (
     <main className="relative min-h-screen">
-      {/* Fixed Joburg Wallpaper */}
       <div className="fixed inset-0 -z-10">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"

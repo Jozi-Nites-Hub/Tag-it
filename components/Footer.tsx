@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -16,6 +17,14 @@ export default function Footer() {
       <p className="mt-1 text-xs text-gray-500">
         Proudly South African. Built by Jozi Nites.
       </p>
+      <div className="mt-4 flex justify-center gap-5 text-xs font-semibold text-gray-400">
+        <Link href="/studio" className="hover:text-tag-yellow">
+          Studio
+        </Link>
+        <Link href="/coffee" className="hover:text-tag-yellow">
+          Buy us a coffee
+        </Link>
+      </div>
     </footer>
   );
 }
