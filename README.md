@@ -12,9 +12,9 @@
 ### What is TAGit?
 
 **TAGit** is a free, privacy-first, browser-based watermark studio.  
-Upload your logo (or enter a text watermark) + any single image or batch of images, pick a style preset, tweak size / opacity / rotation, and download individually or export as a ZIP — ready to post.
+Upload your logo (or enter a text watermark) + any single image or batch of images, pick a style preset, tweak size / opacity / rotation, and download individually or export as a ZIP — ready to share.
 
-It’s never been easier to watermark or tag your content before you share it.
+It's never been easier to watermark or tag your content before you share it.
 
 **100% Free · No sign-up · Files stay in your browser**
 
@@ -40,6 +40,7 @@ It’s never been easier to watermark or tag your content before you share it.
 - **Export Controls** — Export as PNG, JPEG, or WebP with configurable compression quality
 - **Mobile PWA Support** — Installable Web App Manifest (`manifest.json`)
 - **Security & Privacy First** — HTTP Security Headers, Content Security Policy, and zero server upload (all files stay in local browser memory)
+- **Performance Monitoring** — Vercel Speed Insights integration for Core Web Vitals tracking
 - **Dark neon Jozi-inspired design**
 
 ---
@@ -50,6 +51,7 @@ It’s never been easier to watermark or tag your content before you share it.
 - **Security Policy (`SECURITY.md`):** Formal vulnerability disclosure process.
 - **Dependency Hardening:** Updated Next.js framework dependencies (`^14.2.35`) to remediate known security advisories.
 - **HTTP Security Headers:** Configured HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy headers.
+- **Performance Monitoring:** Vercel Speed Insights for continuous Core Web Vitals tracking in production.
 
 ---
 
@@ -61,7 +63,8 @@ It’s never been easier to watermark or tag your content before you share it.
 - HTML Canvas API
 - JSZip (Batch Archiving)
 - @imgly/background-removal (AI transparent logo processing)
-- Vercel
+- @vercel/speed-insights (Performance monitoring)
+- Vercel (Deployment & Edge Functions)
 
 ---
 
@@ -75,6 +78,7 @@ It’s never been easier to watermark or tag your content before you share it.
 - [x] Security Policy (`SECURITY.md`), security headers & file validation
 - [x] Batch processing & ZIP download
 - [x] Mobile PWA support (`app/manifest.ts`)
+- [x] Vercel Speed Insights integration
 - [ ] Auth / user accounts (optional)
 - [ ] Save projects / history
 - [ ] Video watermark support
@@ -90,8 +94,61 @@ git clone https://github.com/Jozi-Nites-Hub/Tag-it.git
 cd Tag-it
 npm install
 npm run dev
-npm run build
+```
+
+#### Development Commands
+
+- `npm run dev` — Start Next.js dev server (http://localhost:3000)
+- `npm run build` — Build for production
+- `npm start` — Start production server
+- `npm run lint` — Run ESLint
+
+#### Environment Setup
+
+No environment variables required for local development. All file processing happens client-side in the browser.
+
+**Vercel deployment:** Speed Insights data will be automatically collected on Vercel deployments.
 
 ---
 
-All files are created and updated in the project repository directory and archived in `tag-it-repository.zip` (6.5 MB)!
+### Project Structure
+
+```
+Tag-it/
+├── app/
+│   ├── layout.tsx          Root layout with SpeedInsights
+│   ├── page.tsx            Home page (marketing)
+│   ├── studio/             Watermark studio routes
+│   └── globals.css         Global styles
+├── components/             React components (UI, Canvas, Upload)
+├── lib/                    Utilities (canvas helpers, file validation)
+├── public/                 Static assets (images, favicon, manifest)
+├── package.json            Dependencies & scripts
+├── tsconfig.json           TypeScript configuration
+├── next.config.js          Next.js build & security config
+├── vercel.json             Vercel deployment & edge headers
+└── tailwind.config.ts      Tailwind CSS theme
+```
+
+---
+
+### Deployment
+
+The project is deployed to **Vercel** at https://tag-it-sigma.vercel.app
+
+- **Static Export:** Configured as `output: "export"` for static site generation
+- **Edge Security Headers:** Applied via `vercel.json` for Vercel Edge Network
+- **Performance Monitoring:** Core Web Vitals tracked via Speed Insights dashboard
+- **GitHub Pages:** Fallback deployment available via GitHub Actions
+
+---
+
+### Contributing
+
+Security issues should be reported via the [SECURITY.md](./SECURITY.md) vulnerability disclosure process.
+
+For feature requests or bug reports, create an issue on the [GitHub repository](https://github.com/Jozi-Nites-Hub/Tag-it/issues).
+
+---
+
+**Made with 🍍 by Jozi Nites (Pty) Ltd**
