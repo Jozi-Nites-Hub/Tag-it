@@ -17,7 +17,7 @@ export default function Navbar() {
         </span>
       </Link>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-5">
         <Link
           href="/#about"
           className="hidden text-sm font-medium text-gray-400 transition-colors hover:text-tag-yellow sm:block"
@@ -29,6 +29,12 @@ export default function Navbar() {
           className="hidden text-sm font-medium text-gray-400 transition-colors hover:text-tag-yellow sm:block"
         >
           Features
+        </Link>
+        <Link
+          href="/coffee"
+          className="hidden text-sm font-medium text-gray-400 transition-colors hover:text-tag-yellow sm:block"
+        >
+          Buy us a coffee
         </Link>
         <Link
           href="/studio"

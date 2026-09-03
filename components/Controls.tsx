@@ -1,6 +1,6 @@
 "use client";
 
-import { WatermarkSettings } from "./Studio";
+import { WatermarkSettings } from "@/lib/watermark";
 
 interface ControlsProps {
   settings: WatermarkSettings;
@@ -36,6 +36,47 @@ const positionLabels: Record<string, string> = {
 };
 
 export default function Controls({ settings, onChange, disabled }: ControlsProps) {
+  const applyPreset = (presetName: string) => {
+    switch (presetName) {
+      case "corner":
+        onChange("position", "br");
+        onChange("size", 15);
+        onChange("opacity", 0.9);
+        onChange("rotation", 0);
+        onChange("padding", 20);
+        onChange("tiled", false);
+        onChange("shadow", true);
+        break;
+      case "center":
+        onChange("position", "mc");
+        onChange("size", 25);
+        onChange("opacity", 0.85);
+        onChange("rotation", 0);
+        onChange("padding", 20);
+        onChange("tiled", false);
+        onChange("shadow", true);
+        break;
+      case "subtle":
+        onChange("position", "br");
+        onChange("size", 12);
+        onChange("opacity", 0.45);
+        onChange("rotation", 0);
+        onChange("padding", 15);
+        onChange("tiled", false);
+        onChange("shadow", false);
+        break;
+      case "tiled":
+        onChange("position", "mc");
+        onChange("size", 18);
+        onChange("opacity", 0.35);
+        onChange("rotation", -30);
+        onChange("padding", 30);
+        onChange("tiled", true);
+        onChange("shadow", false);
+        break;
+    }
+  };
+
   return (
     <div
       className={`rounded-2xl border border-tag-yellow/20 bg-tag-surface p-5 backdrop-blur-xl transition-opacity ${
@@ -43,10 +84,88 @@ export default function Controls({ settings, onChange, disabled }: ControlsProps
       }`}
     >
       <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-tag-yellow">
-        ⚙️ 3. Adjustments
+        ⚙️ 3. Presets & Controls
       </h3>
 
-      {/* Position Grid */}
+      <div className="mb-5">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Quick Presets
+        </label>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => applyPreset("corner")}
+            className="rounded-lg border border-white/10 bg-white/5 py-2 px-2 font-semibold text-gray-300 hover:border-tag-yellow hover:text-tag-yellow transition-all"
+          >
+            📌 Corner Badge
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("center")}
+            className="rounded-lg border border-white/10 bg-white/5 py-2 px-2 font-semibold text-gray-300 hover:border-tag-yellow hover:text-tag-yellow transition-all"
+          >
+            🎯 Center Stamp
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("subtle")}
+            className="rounded-lg border border-white/10 bg-white/5 py-2 px-2 font-semibold text-gray-300 hover:border-tag-yellow hover:text-tag-yellow transition-all"
+          >
+            👻 Subtle Overlay
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("tiled")}
+            className="rounded-lg border border-white/10 bg-white/5 py-2 px-2 font-semibold text-gray-300 hover:border-tag-yellow hover:text-tag-yellow transition-all"
+          >
+            🏁 Diagonal Tile
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-white/10 bg-black/30 p-3">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-tag-yellow">
+          ✍️ Optional Text Watermark
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. @yourbrand or © 2026"
+          value={settings.textWatermark || ""}
+          onChange={(e) => onChange("textWatermark", e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-xs text-white focus:border-tag-yellow focus:outline-none"
+        />
+
+        {settings.textWatermark && settings.textWatermark.trim() !== "" && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] uppercase text-gray-400">Color</label>
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="color"
+                  value={settings.textColor || "#ffffff"}
+                  onChange={(e) => onChange("textColor", e.target.value)}
+                  className="h-7 w-7 rounded cursor-pointer border-0 bg-transparent"
+                />
+                <span className="text-xs text-gray-300 font-mono">
+                  {settings.textColor || "#ffffff"}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase text-gray-400">Font Size</label>
+              <input
+                type="number"
+                min={10}
+                max={50}
+                value={settings.textSize || 16}
+                onChange={(e) => onChange("textSize", Number(e.target.value))}
+                className="mt-1 w-full rounded border border-white/10 bg-black/50 px-2 py-1 text-xs text-white"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="mb-5">
         <label className="mb-2 flex justify-between text-xs font-semibold uppercase tracking-wider text-gray-400">
           Position
@@ -69,7 +188,6 @@ export default function Controls({ settings, onChange, disabled }: ControlsProps
         </div>
       </div>
 
-      {/* Sliders */}
       <Slider
         label="Size"
         value={settings.size}
@@ -103,7 +221,6 @@ export default function Controls({ settings, onChange, disabled }: ControlsProps
         onChange={(v) => onChange("padding", v)}
       />
 
-      {/* Toggles */}
       <Toggle
         label="Tiled (repeat)"
         checked={settings.tiled}
@@ -114,6 +231,45 @@ export default function Controls({ settings, onChange, disabled }: ControlsProps
         checked={settings.shadow}
         onChange={(v) => onChange("shadow", v)}
       />
+
+      <div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-3">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-tag-yellow">
+          💾 Export Options
+        </label>
+        <div className="grid grid-cols-3 gap-1">
+          {[
+            { label: "PNG", value: "image/png" },
+            { label: "JPG", value: "image/jpeg" },
+            { label: "WebP", value: "image/webp" },
+          ].map((fmt) => (
+            <button
+              key={fmt.value}
+              type="button"
+              onClick={() => onChange("exportFormat", fmt.value)}
+              className={`rounded py-1 text-xs font-bold transition-all ${
+                (settings.exportFormat || "image/png") === fmt.value
+                  ? "bg-tag-yellow text-black"
+                  : "bg-white/5 text-gray-400 hover:text-white"
+              }`}
+            >
+              {fmt.label}
+            </button>
+          ))}
+        </div>
+
+        {settings.exportFormat !== "image/png" && (
+          <div className="mt-3">
+            <Slider
+              label="Quality"
+              value={Math.round((settings.exportQuality || 0.92) * 100)}
+              min={50}
+              max={100}
+              suffix="%"
+              onChange={(v) => onChange("exportQuality", v / 100)}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
