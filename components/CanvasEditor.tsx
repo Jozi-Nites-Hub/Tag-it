@@ -23,6 +23,8 @@ export default function CanvasEditor({
   settings,
 }: CanvasEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const zipObjectUrlRef = useRef<string | null>(null);
   const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null);
   const [mediaImg, setMediaImg] = useState<HTMLImageElement | null>(null);
   const [customPos, setCustomPos] = useState<{ x: number; y: number } | null>(null);
@@ -33,6 +35,7 @@ export default function CanvasEditor({
   useEffect(() => {
     if (logo) {
       const img = new Image();
+      img.decoding = "async";
       img.crossOrigin = "anonymous";
       img.onload = () => setLogoImg(img);
       img.src = logo;
@@ -44,6 +47,7 @@ export default function CanvasEditor({
   useEffect(() => {
     if (media) {
       const img = new Image();
+      img.decoding = "async";
       img.crossOrigin = "anonymous";
       img.onload = () => setMediaImg(img);
       img.src = media;
@@ -55,33 +59,72 @@ export default function CanvasEditor({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !mediaImg) return;
-    renderWatermarkOnCanvas(canvas, mediaImg, logoImg, settings, customPos);
+
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      renderWatermarkOnCanvas(canvas, mediaImg, logoImg, settings, customPos);
+    };
+
+    if (typeof requestAnimationFrame !== "undefined") {
+      const id = requestAnimationFrame(run);
+      return () => {
+        cancelled = true;
+        cancelAnimationFrame(id);
+      };
+    }
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [logoImg, mediaImg, settings, customPos]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (zipObjectUrlRef.current) URL.revokeObjectURL(zipObjectUrlRef.current);
+    };
+  }, []);
+
+  const updatePointerPosition = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const next = {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
+
+    setCustomPos((prev) => {
+      if (prev && prev.x === next.x && prev.y === next.y) return prev;
+      return next;
+    });
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const scaleX = canvasRef.current.width / rect.width;
-    const scaleY = canvasRef.current.height / rect.height;
-    setCustomPos({
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    });
+    updatePointerPosition(e.clientX, e.clientY);
     setIsDragging(true);
-  }, []);
+  }, [updatePointerPosition]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isDragging || !canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = canvasRef.current.width / rect.width;
-      const scaleY = canvasRef.current.height / rect.height;
-      setCustomPos({
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
+
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+
+      rafRef.current = requestAnimationFrame(() => {
+        updatePointerPosition(e.clientX, e.clientY);
+        rafRef.current = null;
       });
     },
-    [isDragging]
+    [isDragging, updatePointerPosition]
   );
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
@@ -112,6 +155,7 @@ export default function CanvasEditor({
 
   const handleBatchDownloadZip = useCallback(async () => {
     if (mediaList.length === 0) return;
+
     setIsZipping(true);
     setZipProgress(0);
 
@@ -120,31 +164,49 @@ export default function CanvasEditor({
     const quality = settings.exportQuality || 0.92;
     const ext = getExportExtension(format);
     const folder = zip.folder("tagged-media");
-
     const offscreenCanvas = document.createElement("canvas");
 
     for (let i = 0; i < mediaList.length; i++) {
       const src = mediaList[i];
       await new Promise<void>((resolve) => {
         const img = new Image();
+        img.decoding = "async";
         img.crossOrigin = "anonymous";
         img.onload = () => {
           renderWatermarkOnCanvas(offscreenCanvas, img, logoImg, settings, customPos);
-          const dataUrl = offscreenCanvas.toDataURL(format, quality);
-          const base64Data = dataUrl.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, "");
-          folder?.file(`tagged-${i + 1}.${ext}`, base64Data, { base64: true });
+
+          offscreenCanvas.toBlob(
+            (blob) => {
+              if (blob) {
+                folder?.file(`tagged-${i + 1}.${ext}`, blob);
+              }
+              setZipProgress(Math.round(((i + 1) / mediaList.length) * 100));
+              resolve();
+            },
+            format,
+            quality
+          );
+        };
+
+        img.onerror = () => {
           setZipProgress(Math.round(((i + 1) / mediaList.length) * 100));
           resolve();
         };
-        img.onerror = () => resolve();
+
         img.src = src;
       });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    if (zipObjectUrlRef.current) URL.revokeObjectURL(zipObjectUrlRef.current);
+    zipObjectUrlRef.current = url;
+
     const link = document.createElement("a");
     link.download = `tagged-batch-${Date.now()}.zip`;
-    link.href = URL.createObjectURL(content);
+    link.href = url;
     link.click();
 
     setIsZipping(false);
@@ -153,7 +215,8 @@ export default function CanvasEditor({
 
   const handleReset = useCallback(() => setCustomPos(null), []);
 
-  const isReady = mediaImg && (logoImg || (settings.textWatermark && settings.textWatermark.trim() !== ""));
+  const isReady =
+    mediaImg && (logoImg || (settings.textWatermark && settings.textWatermark.trim() !== ""));
 
   return (
     <div className="space-y-4">
@@ -227,7 +290,7 @@ export default function CanvasEditor({
             <button
               onClick={handleBatchDownloadZip}
               disabled={isZipping}
-              className="rounded-full bg-gradient-to-r from-tag-green to-tag-green-dark px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-tag-green/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="rounded-full bg-gradient-to-r from-tag-green to-tag-green-dark px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-tag-green/20 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isZipping ? `📦 Compressing ZIP (${zipProgress}%)…` : `📦 Download All (${mediaList.length}) ZIP`}
             </button>
