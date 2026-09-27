@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import UploadZone from "./UploadZone";
 import Controls from "./Controls";
 import CanvasEditor from "./CanvasEditor";
@@ -15,6 +15,7 @@ export default function Studio() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [bgError, setBgError] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [mediaList, setMediaList] = useState<string[]>([]);
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
@@ -34,6 +35,17 @@ export default function Studio() {
     exportQuality: 0.92,
   });
 
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
+  }, []);
+
   const updateSetting = useCallback(
     <K extends keyof WatermarkSettings>(key: K, value: WatermarkSettings[K]) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
@@ -42,11 +54,19 @@ export default function Studio() {
   );
 
   const processLogo = useCallback(async (source: string, shouldRemove: boolean) => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
     setBgError(null);
+
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = null;
     }
+
     if (!shouldRemove) {
       setProcessedLogo(source);
       return;
@@ -54,10 +74,12 @@ export default function Studio() {
 
     setIsProcessing(true);
     try {
-      const url = await removeImageBackground(source);
+      const url = await removeImageBackground(source, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       objectUrlRef.current = url;
       setProcessedLogo(url);
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error("Background removal failed:", err);
       setProcessedLogo(source);
       setBgError(
@@ -66,7 +88,9 @@ export default function Studio() {
           : "Could not remove background. Using the original image."
       );
     } finally {
-      setIsProcessing(false);
+      if (!controller.signal.aborted) {
+        setIsProcessing(false);
+      }
     }
   }, []);
 
@@ -166,7 +190,7 @@ export default function Studio() {
                     onChange={(e) => handleToggleRemoveBg(e.target.checked)}
                     disabled={isProcessing}
                   />
-                  <div className="peer h-6 w-11 rounded-full bg-white/20 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-tag-yellow peer-checked:after:translate-x-full peer-disabled:opacity-50"></div>
+                  <div className="peer h-6 w-11 rounded-full bg-white/20 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-tag-yellow peer-checked:after:translate-x-5" />
                 </label>
               </div>
             )}
